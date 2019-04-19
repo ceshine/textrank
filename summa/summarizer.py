@@ -6,22 +6,6 @@ from .commons import build_graph as _build_graph
 from .commons import remove_unreachable_nodes as _remove_unreachable_nodes
 
 
-def _set_graph_edge_weights(graph):
-    for sentence_1 in graph.nodes():
-        for sentence_2 in graph.nodes():
-
-            edge = (sentence_1, sentence_2)
-            if sentence_1 != sentence_2 and not graph.has_edge(edge):
-                similarity = _get_similarity(sentence_1, sentence_2)
-                if similarity != 0:
-                    graph.add_edge(edge, similarity)
-
-    # Handles the case in which all similarities are zero.
-    # The resultant summary will consist of random sentences.
-    if all(graph.edge_weight(edge) == 0 for edge in graph.edges()):
-        _create_valid_graph(graph)
-
-
 def _create_valid_graph(graph):
     nodes = graph.nodes()
 
@@ -42,7 +26,8 @@ def _get_similarity(s1, s2):
     words_sentence_one = s1.split()
     words_sentence_two = s2.split()
 
-    common_word_count = _count_common_words(words_sentence_one, words_sentence_two)
+    common_word_count = _count_common_words(
+        words_sentence_one, words_sentence_two)
 
     log_s1 = log10(len(words_sentence_one))
     log_s2 = log10(len(words_sentence_two))
@@ -51,6 +36,21 @@ def _get_similarity(s1, s2):
         return 0
 
     return common_word_count / (log_s1 + log_s2)
+
+
+def _set_graph_edge_weights(graph, similarity_func=_get_similarity):
+    for sentence_1 in graph.nodes():
+        for sentence_2 in graph.nodes():
+            edge = (sentence_1, sentence_2)
+            if sentence_1 != sentence_2 and not graph.has_edge(edge):
+                similarity = similarity_func(sentence_1, sentence_2)
+                if similarity != 0:
+                    graph.add_edge(edge, similarity)
+
+    # Handles the case in which all similarities are zero.
+    # The resultant summary will consist of random sentences.
+    if all(graph.edge_weight(edge) == 0 for edge in graph.edges()):
+        _create_valid_graph(graph)
 
 
 def _count_common_words(words_sentence_one, words_sentence_two):
@@ -134,7 +134,8 @@ def summarize(text, ratio=0.2, words=None, language="english", split=False, scor
     _add_scores_to_sentences(sentences, pagerank_scores)
 
     # Extracts the most important sentences with the selected criterion.
-    extracted_sentences = _extract_most_important_sentences(sentences, ratio, words)
+    extracted_sentences = _extract_most_important_sentences(
+        sentences, ratio, words)
 
     # Sorts the extracted sentences by apparition order in the original text.
     extracted_sentences.sort(key=lambda s: s.index)
