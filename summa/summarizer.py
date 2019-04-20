@@ -101,7 +101,7 @@ def _extract_most_important_sentences(sentences, ratio, words):
     # If no "words" option is selected, the number of sentences is
     # reduced by the provided ratio.
     if words is None:
-        length = len(sentences) * ratio
+        length = max(len(sentences) * ratio, 1)
         return sentences[:int(length)]
 
     # Else, the ratio is ignored.
