@@ -38,6 +38,10 @@ def _get_similarity(s1, s2):
     return common_word_count / (log_s1 + log_s2)
 
 
+def _similarity_func_factory(sentences):
+    return _get_similarity
+
+
 def _set_graph_edge_weights(graph, similarity_func=_get_similarity):
     for sentence_1 in graph.nodes():
         for sentence_2 in graph.nodes():
@@ -109,16 +113,19 @@ def _extract_most_important_sentences(sentences, ratio, words):
         return _get_sentences_with_word_count(sentences, words)
 
 
-def summarize(text, ratio=0.2, words=None, language="english", split=False, scores=False, additional_stopwords=None):
+def summarize(text, ratio=0.2, words=None, language="english",
+              split=False, scores=False, additional_stopwords=None,
+              similarity_func_factory=_similarity_func_factory):
     if not isinstance(text, str):
         raise ValueError("Text parameter must be a Unicode object (str)!")
 
     # Gets a list of processed sentences.
     sentences = _clean_text_by_sentences(text, language, additional_stopwords)
+    similarity_func = similarity_func_factory(sentences)
 
     # Creates the graph and calculates the similarity coefficient for every pair of nodes.
     graph = _build_graph([sentence.token for sentence in sentences])
-    _set_graph_edge_weights(graph)
+    _set_graph_edge_weights(graph, similarity_func=similarity_func)
 
     # Remove all nodes with all edges weights equal to zero.
     _remove_unreachable_nodes(graph)
