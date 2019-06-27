@@ -7,6 +7,7 @@ class SyntacticUnit(object):
         self.index = index
         self.score = -1
         self.paragraph = paragraph
+        self.entities = None
 
     def __str__(self):
         return (
